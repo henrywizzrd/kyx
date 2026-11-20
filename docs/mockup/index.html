@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Kyx – bản mẫu v2</title>
+<title>Kyx – bản mẫu v3</title>
 <style>
   /* VOICE: sản phẩm thật, gọn như iOS. IDEA: app Kyx + bàn phím chạy thử.
      PICTURE: bàn phím là chính. COLOUR: iOS tối/sáng. TYPE: SF/system. LAYOUT: tab trên, bàn phím dưới. */
@@ -89,7 +89,7 @@
   </div>
 
   <section class="view on" id="viewType">
-    <p class="hint"><b>Giữ phím cách</b> rồi vuốt bốn hướng để di chuyển con trỏ. <b>Giữ ⌫</b> rồi vuốt trái để chọn từng từ, nhấc tay để xoá. <b>Giữ a e o u i y d</b> để chọn chữ có dấu. Chạm <b>VI EN</b> để đổi ngôn ngữ.</p>
+    <p class="hint"><b>Giữ phím cách</b> rồi vuốt bốn hướng để di chuyển con trỏ. <b>Giữ ⌫</b> rồi vuốt trái để chọn từng từ, nhấc tay để xoá. <b>Giữ a e o u i y d</b> để chọn chữ có dấu. Chạm <b>VI EN</b> để đổi ngôn ngữ. Chế độ <b>VI</b> gõ Telex: <b>tooi laf nguwowif Vieejt</b> → tôi là người Việt.</p>
     <div class="field" id="field"></div>
     <div class="status" id="status"></div>
     <div class="spacer"></div>
@@ -105,6 +105,7 @@
   </section>
 </div>
 
+<script src="telex.js"></script>
 <script>
 {
 const $ = (id) => document.getElementById(id);
@@ -146,6 +147,15 @@ function renderField() {
 function insert(s) {
   st.text = st.text.slice(0, st.caret) + s + st.text.slice(st.caret);
   st.caret += s.length;
+}
+// Ở chế độ VI, chữ cái đi qua engine Telex (telex.js); chữ chọn từ hàng dấu thì chèn thẳng.
+function typeLetter(ch, raw) {
+  if (raw || st.lang !== 'VI' || st.page !== 'letters' || !/^[a-z]$/i.test(ch) || !window.KyxTelex) { insert(ch); return; }
+  const before = st.text.slice(0, st.caret);
+  const word = (before.match(/\p{L}+$/u) || [''])[0];
+  const out = KyxTelex.telexApply(word, ch, settings.tone);
+  st.text = before.slice(0, before.length - word.length) + out + st.text.slice(st.caret);
+  st.caret = st.caret - word.length + out.length;
 }
 function deleteBack() {
   if (st.caret === 0) return;
@@ -269,9 +279,10 @@ function charKey(el, k) {
   });
   el.addEventListener('pointerup', () => {
     clearTimeout(timer); el.classList.remove('pressed');
+    const fromAlt = !!altsEl;
     const ch = altsEl ? label([...alts][idx]) : label(k);
     altsEl?.remove(); altsEl = null;
-    insert(ch);
+    typeLetter(ch, fromAlt);
     if (st.shift === 'once') st.shift = 'off';
     render();
   });
@@ -351,7 +362,7 @@ const GROUPS = [
   ['Gõ chữ', [
     { k: 'autocap', t: 'Tự viết hoa đầu câu' },
     { k: 'doubleSpace', t: 'Chạm cách 2 lần ra dấu chấm' },
-    { k: 'tone', t: 'Kiểu bỏ dấu', d: 'Áp dụng khi có Telex (M2)', seg: [['new', 'hoà'], ['old', 'hòa']] },
+    { k: 'tone', t: 'Kiểu bỏ dấu', d: 'hoà, thuỷ (mới) hay hòa, thủy (cũ)', seg: [['new', 'hoà'], ['old', 'hòa']] },
     { k: 'defaultLang', t: 'Ngôn ngữ mặc định', seg: [['VI', 'VI'], ['EN', 'EN']] },
   ]],
   ['Giao diện', [

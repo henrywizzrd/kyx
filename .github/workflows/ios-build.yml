@@ -41,6 +41,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run typecheck
+      - name: Telex vectors (JS mockup engine)
+        run: node docs/mockup/telex.test.js
 
   ios-build:
     needs: [engine-tests, host-typecheck]

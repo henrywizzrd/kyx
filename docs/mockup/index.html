@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Kyx – bản mẫu v5</title>
+<title>Kyx – bản mẫu v6</title>
 <style>
   /* VOICE: sản phẩm thật, gọn như iOS. IDEA: app Kyx + bàn phím chạy thử.
      PICTURE: bàn phím là chính. COLOUR: iOS tối/sáng. TYPE: SF/system. LAYOUT: tab trên, bàn phím dưới. */
@@ -54,6 +54,20 @@
   .kb.compact .key.ret { flex: 0 0 17%; background: var(--accent); color: #fff; }
   .kb.compact .key.ret.pressed { filter: brightness(.9); }
   .kb.compact svg { width: 22px; height: 22px; }
+  /* Kiểu "Cơ": keycap 3D có viền đáy, phím nhấn lún xuống, phím nhấn mạnh màu tím */
+  .kb.mech { --key:#f6f6f9; --skirt:#c8c8d4; --fn:#e6e6ee; --fnskirt:#b6b6c4; --accent:#7c5cff; --askirt:#5536d6; --kt:#2b2b33; }
+  .kb.mech:not(.light) { --key:#3b3b46; --skirt:#1d1d24; --fn:#2f2f39; --fnskirt:#17171d; --kt:#f2f2f7; }
+  .kb.mech .row { gap: 1.4%; margin-bottom: 13px; }
+  .kb.mech .key { border-radius: 8px; font-size: 20px; font-weight: 600; flex-basis: 8.6%; background: linear-gradient(rgba(255,255,255,.18), rgba(0,0,0,.05)), var(--key);
+    box-shadow: 0 4px 0 var(--skirt), 0 6px 8px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.55); transform: translateY(-2px); transition: transform .05s, box-shadow .05s; }
+  .kb.mech .key.fn { font-size: 15px; background: linear-gradient(rgba(255,255,255,.12), rgba(0,0,0,.05)), var(--fn); box-shadow: 0 4px 0 var(--fnskirt), 0 6px 8px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.35); }
+  .kb.mech .key.wide { flex-basis: 12.8%; }
+  .kb.mech .key.r123, .kb.mech .key.lang-k, .kb.mech .key.sticker { flex: 0 0 11.4%; }
+  .kb.mech .key.ret, .kb.mech .key.lang-k { flex-basis: 17%; background: linear-gradient(rgba(255,255,255,.15), rgba(0,0,0,.08)), var(--accent); color: #fff; box-shadow: 0 4px 0 var(--askirt), 0 6px 8px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.35); }
+  .kb.mech .key.lang-k { flex: 0 0 11.4%; }
+  .kb.mech .key.pressed { transform: translateY(2px); box-shadow: 0 0 0 var(--skirt), 0 1px 2px rgba(0,0,0,.25); }
+  .kb.mech .key.fn.on { background: var(--accent); color: #fff; box-shadow: 0 4px 0 var(--askirt); }
+  .kb.mech svg { width: 22px; height: 22px; }
   .bar { width: 46px; height: 10px; border: 2.5px solid currentColor; border-top: 0; border-radius: 0 0 2px 2px; opacity: .8; }
   .kb.trackpad .bar { opacity: 0; }
   .lang b { color: var(--kt); opacity: .85; }
@@ -144,7 +158,7 @@ const DEFAULTS = { click: true, haptic: true, autocap: true, doubleSpace: true, 
 // Hàng dưới: kiểu Gọn = 123 · sticker · cách · VI/EN · Enter; kiểu iOS = 123 · VI/EN · cách · Enter
 function bottomRow() {
   const pageKey = st.page === 'letters' ? '#123' : '#abc';
-  return settings.style === 'compact' ? [pageKey, '#sticker', '#space', '#lang', '#ret'] : [pageKey, '#lang', '#space', '#ret'];
+  return settings.style !== 'ios' ? [pageKey, '#sticker', '#space', '#lang', '#ret'] : [pageKey, '#lang', '#space', '#ret'];
 }
 let settings = { ...DEFAULTS };
 try { Object.assign(settings, JSON.parse(localStorage.getItem('kyx-settings') || '{}')); } catch (e) {}
@@ -216,7 +230,7 @@ function feedback() {
     try {
       audio = audio || new (window.AudioContext || window.webkitAudioContext)();
       const o = audio.createOscillator(), g = audio.createGain();
-      o.frequency.value = 1800; g.gain.setValueAtTime(0.06, audio.currentTime);
+      o.frequency.value = settings.style === 'mech' ? 420 : 1800; g.gain.setValueAtTime(settings.style === 'mech' ? 0.12 : 0.06, audio.currentTime);
       g.gain.exponentialRampToValueAtTime(0.0001, audio.currentTime + 0.03);
       o.connect(g).connect(audio.destination); o.start(); o.stop(audio.currentTime + 0.035);
     } catch (e) {}
@@ -229,7 +243,8 @@ function render() {
   const dark = settings.theme === 'dark' || (settings.theme === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
   kb.classList.toggle('light', !dark);
   kb.classList.toggle('compact', settings.style === 'compact');
-  kb.style.setProperty('--kh', Math.round((settings.style === 'compact' ? 42 : 46) * settings.height) + 'px');
+  kb.classList.toggle('mech', settings.style === 'mech');
+  kb.style.setProperty('--kh', Math.round(({ compact: 42, mech: 44, ios: 46 }[settings.style] || 46) * settings.height) + 'px');
   kb.innerHTML = '';
   for (const row of [...LAYOUTS[st.page], bottomRow()]) {
     const r = document.createElement('div'); r.className = 'row';
@@ -262,7 +277,7 @@ function makeKey(k) {
     case '#abc': simple(['fn', 'r123'], 'ABC', () => { st.page = 'letters'; autoCap(); }); break;
     case '#lang': simple(['fn', 'r123', 'lang-k'], `<span style="font-size:16px;font-weight:600">${st.lang}</span>`, () => { st.lang = st.lang === 'VI' ? 'EN' : 'VI'; }); break;
     case '#sticker': simple(['fn', 'sticker'], ICONS.emoji, () => flash('Nút sticker: chờ Tyson chốt chức năng')); break;
-    case '#space': el.classList.add('space'); el.innerHTML = settings.style === 'compact' ? '' : `<span class="lang">${st.lang}</span>`; spaceKey(el); break;
+    case '#space': el.classList.add('space'); el.innerHTML = settings.style !== 'ios' ? '' : `<span class="lang">${st.lang}</span>`; spaceKey(el); break;
     case '#ret': simple(['fn', 'ret'], ICONS.ret, () => { insert('\n'); autoCap(); }); break;
   }
   return el;
@@ -386,7 +401,7 @@ const GROUPS = [
     { k: 'defaultLang', t: 'Ngôn ngữ mặc định', seg: [['VI', 'VI'], ['EN', 'EN']] },
   ]],
   ['Giao diện', [
-    { k: 'style', t: 'Kiểu phím', seg: [['compact', 'Gọn'], ['ios', 'iOS']] },
+    { k: 'style', t: 'Kiểu phím', seg: [['compact', 'Gọn'], ['mech', 'Cơ'], ['ios', 'iOS']] },
     { k: 'capsLabels', t: 'Chữ in hoa trên phím', d: 'Chỉ đổi cách hiện; chữ gõ ra vẫn theo Shift' },
     { k: 'theme', t: 'Theme', seg: [['system', 'Hệ thống'], ['light', 'Sáng'], ['dark', 'Tối']] },
     { k: 'height', t: 'Chiều cao phím', range: [0.85, 1.2, 0.05] },

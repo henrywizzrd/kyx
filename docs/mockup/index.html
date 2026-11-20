@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Kyx – bản mẫu v4</title>
+<title>Kyx – bản mẫu v5</title>
 <style>
   /* VOICE: sản phẩm thật, gọn như iOS. IDEA: app Kyx + bàn phím chạy thử.
      PICTURE: bàn phím là chính. COLOUR: iOS tối/sáng. TYPE: SF/system. LAYOUT: tab trên, bàn phím dưới. */
@@ -43,6 +43,19 @@
   .key.space { flex: 1 1 auto; }
   .key.ret { flex: 0 0 23%; }
   .lang { font-size: 15px; font-weight: 600; color: #8a8a8a; }
+  /* Kiểu "Gọn" (theo ảnh Tyson gửi): phím nhỏ, chữ mảnh, Enter xanh ngọc */
+  .kb.compact { --key:#454b52; --fn:#363b40; --press:#5b6168; --accent:#22b3ad; }
+  .kb.compact.light { --key:#fff; --fn:#dde1e6; --press:#c9ced4; }
+  .kb.compact .row { gap: 1.4%; margin-bottom: 9px; }
+  .kb.compact .key { border-radius: 6px; font-size: 21px; flex-basis: 8.6%; box-shadow: 0 1px 1px rgba(0,0,0,.25); }
+  .kb.compact .key.fn { font-size: 15px; }
+  .kb.compact .key.wide { flex-basis: 12.8%; }
+  .kb.compact .key.r123, .kb.compact .key.lang-k, .kb.compact .key.sticker { flex: 0 0 11.4%; }
+  .kb.compact .key.ret { flex: 0 0 17%; background: var(--accent); color: #fff; }
+  .kb.compact .key.ret.pressed { filter: brightness(.9); }
+  .kb.compact svg { width: 22px; height: 22px; }
+  .bar { width: 46px; height: 10px; border: 2.5px solid currentColor; border-top: 0; border-radius: 0 0 2px 2px; opacity: .8; }
+  .kb.trackpad .bar { opacity: 0; }
   .lang b { color: var(--kt); opacity: .85; }
   .kb svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   .popup { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); margin-bottom: 4px; min-width: 120%;
@@ -89,7 +102,7 @@
   </div>
 
   <section class="view on" id="viewType">
-    <p class="hint"><b>Giữ phím cách</b> rồi vuốt bốn hướng để di chuyển con trỏ. <b>Giữ ⌫</b> rồi vuốt trái để chọn từng từ, nhấc tay để xoá. <b>Giữ a e o u i y d</b> để chọn chữ có dấu. Phím <b>VI/EN</b> (cạnh 123) để đổi ngôn ngữ. Chế độ <b>VI</b> gõ Telex: <b>tooi laf nguwowif Vieejt</b> → tôi là người Việt.</p>
+    <p class="hint"><b>Giữ phím cách</b> rồi vuốt bốn hướng để di chuyển con trỏ. <b>Giữ ⌫</b> rồi vuốt trái để chọn từng từ, nhấc tay để xoá. <b>Giữ a e o u i y d</b> để chọn chữ có dấu. Phím <b>VI/EN</b> để đổi ngôn ngữ. Tab Cài đặt có <b>Kiểu phím</b> (Gọn / iOS) và <b>Chữ in hoa trên phím</b>. Chế độ <b>VI</b> gõ Telex: <b>tooi laf nguwowif Vieejt</b> → tôi là người Việt.</p>
     <div class="field" id="field"></div>
     <div class="status" id="status"></div>
     <div class="spacer"></div>
@@ -119,15 +132,20 @@ const ICONS = {
 };
 const LAYOUTS = {
   letters: [['q','w','e','r','t','y','u','i','o','p'],['a','s','d','f','g','h','j','k','l'],
-            ['#shift','z','x','c','v','b','n','m','#del'],['#123','#emoji','#space','#ret']],
+            ['#shift','z','x','c','v','b','n','m','#del']],
   numbers: [['1','2','3','4','5','6','7','8','9','0'],['-','/',':',';','(',')','$','&','@','"'],
-            ['#sym','.',',','?','!',"'",'#del'],['#abc','#emoji','#space','#ret']],
+            ['#sym','.',',','?','!',"'",'#del']],
   symbols: [['[',']','{','}','#','%','^','*','+','='],['_','\\','|','~','<','>','€','£','¥','•'],
-            ['#num','.',',','?','!',"'",'#del'],['#abc','#emoji','#space','#ret']],
+            ['#num','.',',','?','!',"'",'#del']],
 };
 const ALTS = { a:'aàáảãạăâ', e:'eèéẻẽẹê', o:'oòóỏõọôơ', u:'uùúủũụư', i:'iìíỉĩị', y:'yỳýỷỹỵ', d:'dđ' };
 
-const DEFAULTS = { click: true, haptic: true, autocap: true, doubleSpace: true, tone: 'new', defaultLang: 'VI', height: 1, theme: 'system' };
+const DEFAULTS = { click: true, haptic: true, autocap: true, doubleSpace: true, tone: 'new', defaultLang: 'VI', height: 1, theme: 'system', style: 'compact', capsLabels: false };
+// Hàng dưới: kiểu Gọn = 123 · sticker · cách · VI/EN · Enter; kiểu iOS = 123 · VI/EN · cách · Enter
+function bottomRow() {
+  const pageKey = st.page === 'letters' ? '#123' : '#abc';
+  return settings.style === 'compact' ? [pageKey, '#sticker', '#space', '#lang', '#ret'] : [pageKey, '#lang', '#space', '#ret'];
+}
 let settings = { ...DEFAULTS };
 try { Object.assign(settings, JSON.parse(localStorage.getItem('kyx-settings') || '{}')); } catch (e) {}
 
@@ -210,9 +228,10 @@ function feedback() {
 function render() {
   const dark = settings.theme === 'dark' || (settings.theme === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
   kb.classList.toggle('light', !dark);
-  kb.style.setProperty('--kh', Math.round(46 * settings.height) + 'px');
+  kb.classList.toggle('compact', settings.style === 'compact');
+  kb.style.setProperty('--kh', Math.round((settings.style === 'compact' ? 42 : 46) * settings.height) + 'px');
   kb.innerHTML = '';
-  for (const row of LAYOUTS[st.page]) {
+  for (const row of [...LAYOUTS[st.page], bottomRow()]) {
     const r = document.createElement('div'); r.className = 'row';
     row.forEach(k => r.appendChild(makeKey(k)));
     kb.appendChild(r);
@@ -220,6 +239,8 @@ function render() {
   renderField();
 }
 function label(k) { return st.page === 'letters' && st.shift !== 'off' ? k.toUpperCase() : k; }
+// Chữ hiển thị trên phím: tuỳ chọn "Chữ in hoa trên phím" chỉ đổi cách hiện, không đổi chữ gõ ra.
+function disp(k) { return st.page === 'letters' && settings.capsLabels ? k.toUpperCase() : label(k); }
 
 function makeKey(k) {
   const el = document.createElement('div');
@@ -239,8 +260,9 @@ function makeKey(k) {
     case '#123': case '#num': simple(['fn', k === '#123' ? 'r123' : 'wide'], '123', () => { st.page = 'numbers'; }); break;
     case '#sym': simple(['fn', 'wide'], '#+=', () => { st.page = 'symbols'; }); break;
     case '#abc': simple(['fn', 'r123'], 'ABC', () => { st.page = 'letters'; autoCap(); }); break;
-    case '#emoji': simple(['fn', 'emoji'], `<span style="font-size:16px;font-weight:500">${st.lang === 'VI' ? 'EN' : 'VI'}</span>`, () => { st.lang = st.lang === 'VI' ? 'EN' : 'VI'; }); break;
-    case '#space': el.classList.add('space'); el.innerHTML = `<span class="lang">${st.lang}</span>`; spaceKey(el); break;
+    case '#lang': simple(['fn', 'r123', 'lang-k'], `<span style="font-size:16px;font-weight:600">${st.lang}</span>`, () => { st.lang = st.lang === 'VI' ? 'EN' : 'VI'; }); break;
+    case '#sticker': simple(['fn', 'sticker'], ICONS.emoji, () => flash('Nút sticker: chờ Tyson chốt chức năng')); break;
+    case '#space': el.classList.add('space'); el.innerHTML = settings.style === 'compact' ? '<span class="bar"></span>' : `<span class="lang">${st.lang}</span>`; spaceKey(el); break;
     case '#ret': simple(['fn', 'ret'], ICONS.ret, () => { insert('\n'); autoCap(); }); break;
   }
   return el;
@@ -255,7 +277,7 @@ function tap(el, fn) {
 
 // Phím chữ: giữ để hiện chữ có dấu, vuốt ngang để chọn.
 function charKey(el, k) {
-  el.textContent = label(k);
+  el.textContent = disp(k);
   const pop = document.createElement('div'); pop.className = 'popup'; pop.textContent = label(k); el.appendChild(pop);
   let timer, altsEl = null, idx = 0, x0 = 0;
   const alts = st.page === 'letters' ? ALTS[k] : null;
@@ -364,6 +386,8 @@ const GROUPS = [
     { k: 'defaultLang', t: 'Ngôn ngữ mặc định', seg: [['VI', 'VI'], ['EN', 'EN']] },
   ]],
   ['Giao diện', [
+    { k: 'style', t: 'Kiểu phím', seg: [['compact', 'Gọn'], ['ios', 'iOS']] },
+    { k: 'capsLabels', t: 'Chữ in hoa trên phím', d: 'Chỉ đổi cách hiện; chữ gõ ra vẫn theo Shift' },
     { k: 'theme', t: 'Theme', seg: [['system', 'Hệ thống'], ['light', 'Sáng'], ['dark', 'Tối']] },
     { k: 'height', t: 'Chiều cao phím', range: [0.85, 1.2, 0.05] },
   ]],

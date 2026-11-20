@@ -16,6 +16,7 @@ final class KeyboardViewController: UIInputViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         keyboard.delegate = self
+        view.backgroundColor = .clear
         keyboard.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(keyboard)
         let height = view.heightAnchor.constraint(equalToConstant: keyboard.preferredHeight)

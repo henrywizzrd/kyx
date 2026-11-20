@@ -1,6 +1,7 @@
 import UIKit
 
 /// Màu bàn phím, lấy theo bản mẫu docs/mockup/index.html.
+/// `panel` không còn tô làm nền (nền do iOS vẽ), chỉ dùng làm màu mũi tên khi Shift đang bật.
 struct Palette {
     let panel: UIColor
     let key: UIColor

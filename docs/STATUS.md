@@ -17,5 +17,9 @@ Spec hành vi: `docs/mockup/index.html` + `telex.js` (ADR-010).
 - `adjustTextPosition` với emoji (tính theo UTF-16, chưa kiểm chứng)
 - Âm click: dùng `AudioServicesPlaySystemSound(1104)` khi bật Full Access
 
+## Kết quả test trên máy (test build 1, iPhone 16 Pro Max, iOS 27.2)
+- ESign ký được app + `.appex`; Kyx hiện trong Cài đặt; bàn phím chạy được.
+- Lần đầu phải giữ 🌐 để chọn Kyx; sau đó iOS nhớ bàn phím dùng lần cuối.
+
 ## Bug đã biết
-(chưa có)
+- [đã sửa, chờ build 2] Nền vuông màu `#d1d3d9` lệch với nền bo góc của iOS, lộ 2 lằn và 2 góc vuông. Đã chuyển nền sang trong suốt.

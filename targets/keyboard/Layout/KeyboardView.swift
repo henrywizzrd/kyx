@@ -115,7 +115,8 @@ final class KeyboardView: UIView {
     }
 
     private func applyPalette() {
-        backgroundColor = palette.panel
+        // Nền trong suốt: để iOS tự vẽ nền bàn phím bo góc, liền màu với vùng nút 🌐 bên dưới.
+        backgroundColor = .clear
         keyViews.forEach { $0.palette = palette }
         popup.backgroundColor = palette.key
         popup.label.textColor = palette.text

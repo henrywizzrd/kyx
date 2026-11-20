@@ -262,7 +262,7 @@ function makeKey(k) {
     case '#abc': simple(['fn', 'r123'], 'ABC', () => { st.page = 'letters'; autoCap(); }); break;
     case '#lang': simple(['fn', 'r123', 'lang-k'], `<span style="font-size:16px;font-weight:600">${st.lang}</span>`, () => { st.lang = st.lang === 'VI' ? 'EN' : 'VI'; }); break;
     case '#sticker': simple(['fn', 'sticker'], ICONS.emoji, () => flash('Nút sticker: chờ Tyson chốt chức năng')); break;
-    case '#space': el.classList.add('space'); el.innerHTML = settings.style === 'compact' ? '<span class="bar"></span>' : `<span class="lang">${st.lang}</span>`; spaceKey(el); break;
+    case '#space': el.classList.add('space'); el.innerHTML = settings.style === 'compact' ? '' : `<span class="lang">${st.lang}</span>`; spaceKey(el); break;
     case '#ret': simple(['fn', 'ret'], ICONS.ret, () => { insert('\n'); autoCap(); }); break;
   }
   return el;

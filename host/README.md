@@ -2,7 +2,9 @@
 
 | File | Vai trò |
 |---|---|
-| `App.tsx` | M0: hướng dẫn bật bàn phím + nút ghi/đọc ping qua App Group + ô gõ thử |
-| `shared.ts` | Tên App Group và các khoá (phải khớp với `shared/README.md`) |
-
-Đọc/ghi App Group bằng `ExtensionStorage` của `@bacons/apple-targets` (thực chất là UserDefaults suite).
+| `App.tsx` | 3 tab: Bắt đầu (hướng dẫn + ô gõ thử), Cài đặt, Log |
+| `SettingsScreen.tsx` | Các cài đặt, ghi ngay vào App Group khi đổi |
+| `LogScreen.tsx` | Xem/xoá log của bàn phím |
+| `settings.ts` | Kiểu `KyxSettings`, giá trị mặc định, đọc/ghi qua `ExtensionStorage` |
+| `shared.ts` | Tên App Group và các khoá |
+| `theme.ts` | Màu sáng/tối của app |

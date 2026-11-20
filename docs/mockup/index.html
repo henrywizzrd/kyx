@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Kyx – bản mẫu v3</title>
+<title>Kyx – bản mẫu v4</title>
 <style>
   /* VOICE: sản phẩm thật, gọn như iOS. IDEA: app Kyx + bàn phím chạy thử.
      PICTURE: bàn phím là chính. COLOUR: iOS tối/sáng. TYPE: SF/system. LAYOUT: tab trên, bàn phím dưới. */
@@ -40,9 +40,9 @@
   .key.wide { flex: 0 0 12.6%; }
   .key.fn.on { background: var(--kt); color: var(--panel); }
   .key.r123, .key.emoji { flex: 0 0 11.2%; }
-  .key.space { flex: 1 1 auto; justify-content: flex-end; align-items: flex-end; padding: 0 10px 6px; }
+  .key.space { flex: 1 1 auto; }
   .key.ret { flex: 0 0 23%; }
-  .lang { font-size: 13px; font-weight: 700; letter-spacing: .5px; color: #8a8a8a; padding: 6px 0 0 10px; }
+  .lang { font-size: 15px; font-weight: 600; color: #8a8a8a; }
   .lang b { color: var(--kt); opacity: .85; }
   .kb svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   .popup { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); margin-bottom: 4px; min-width: 120%;
@@ -89,7 +89,7 @@
   </div>
 
   <section class="view on" id="viewType">
-    <p class="hint"><b>Giữ phím cách</b> rồi vuốt bốn hướng để di chuyển con trỏ. <b>Giữ ⌫</b> rồi vuốt trái để chọn từng từ, nhấc tay để xoá. <b>Giữ a e o u i y d</b> để chọn chữ có dấu. Chạm <b>VI EN</b> để đổi ngôn ngữ. Chế độ <b>VI</b> gõ Telex: <b>tooi laf nguwowif Vieejt</b> → tôi là người Việt.</p>
+    <p class="hint"><b>Giữ phím cách</b> rồi vuốt bốn hướng để di chuyển con trỏ. <b>Giữ ⌫</b> rồi vuốt trái để chọn từng từ, nhấc tay để xoá. <b>Giữ a e o u i y d</b> để chọn chữ có dấu. Phím <b>VI/EN</b> (cạnh 123) để đổi ngôn ngữ. Chế độ <b>VI</b> gõ Telex: <b>tooi laf nguwowif Vieejt</b> → tôi là người Việt.</p>
     <div class="field" id="field"></div>
     <div class="status" id="status"></div>
     <div class="spacer"></div>
@@ -239,8 +239,8 @@ function makeKey(k) {
     case '#123': case '#num': simple(['fn', k === '#123' ? 'r123' : 'wide'], '123', () => { st.page = 'numbers'; }); break;
     case '#sym': simple(['fn', 'wide'], '#+=', () => { st.page = 'symbols'; }); break;
     case '#abc': simple(['fn', 'r123'], 'ABC', () => { st.page = 'letters'; autoCap(); }); break;
-    case '#emoji': simple(['fn', 'emoji'], ICONS.emoji, () => flash('Emoji: để sau v1')); break;
-    case '#space': el.classList.add('space'); el.innerHTML = `<span class="lang">${st.lang === 'VI' ? '<b>VI</b> EN' : 'VI <b>EN</b>'}</span>`; spaceKey(el); break;
+    case '#emoji': simple(['fn', 'emoji'], `<span style="font-size:16px;font-weight:500">${st.lang === 'VI' ? 'EN' : 'VI'}</span>`, () => { st.lang = st.lang === 'VI' ? 'EN' : 'VI'; }); break;
+    case '#space': el.classList.add('space'); el.innerHTML = `<span class="lang">${st.lang}</span>`; spaceKey(el); break;
     case '#ret': simple(['fn', 'ret'], ICONS.ret, () => { insert('\n'); autoCap(); }); break;
   }
   return el;
@@ -340,8 +340,6 @@ function spaceKey(el) {
     clearTimeout(timer); el.classList.remove('pressed');
     if (track) { track = false; kb.classList.remove('trackpad'); field.classList.remove('trackpad-on'); autoCap(); render(); return; }
     if (e.type === 'pointercancel') return;
-    const lr = el.querySelector('.lang')?.getBoundingClientRect();
-    if (lr && e.clientX >= lr.left - 6 && e.clientX <= lr.right + 6 && e.clientY >= lr.top - 6 && e.clientY <= lr.bottom + 6) { st.lang = st.lang === 'VI' ? 'EN' : 'VI'; render(); return; }
     const t = st.text.slice(0, st.caret);
     if (settings.doubleSpace && / $/.test(t) && /[\p{L}\p{N}]$/u.test(t.slice(0, -1))) { deleteBack(); insert('. '); }
     else insert(' ');

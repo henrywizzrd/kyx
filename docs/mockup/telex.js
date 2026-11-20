@@ -114,10 +114,13 @@
       else if (o !== undefined) cs[o].base = 'ơ';
       else if (u !== undefined) cs[u].base = 'ư';
       else if (find('a') !== undefined) cs[find('a')].base = 'ă';
+      else if (c.length === 1 && c[0] === cs.length - 1 && cs[c[0]].base === 'ư') {
+        cs[c[0]] = { base: 'w', tone: 0, upper: key !== k };                // ww = w (chữ ư đứng riêng)
+      }
       else if (c.some((i) => ['ă', 'ơ', 'ư'].includes(cs[i].base))) {    // gõ lại w = bỏ móc
         c.forEach((i) => { if (['ă', 'ơ', 'ư'].includes(cs[i].base)) cs[i].base = ROOT[cs[i].base]; });
         literal(cs, key);
-      } else if (cs.length === 0 || c.length === 0) cs.push({ base: 'ư', tone: 0, upper: key !== k });
+      } else if (c.length === 0 && (cs.length === 0 || cs[cs.length - 1].base !== 'w')) cs.push({ base: 'ư', tone: 0, upper: key !== k });
       else literal(cs, key);
     } else {
       literal(cs, key);

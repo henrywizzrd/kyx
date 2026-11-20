@@ -45,3 +45,6 @@ node_modules
 /build
 /out
 /engine/.build
+
+# Bản sao engine, CI chép vào lúc build
+/targets/keyboard/Engine

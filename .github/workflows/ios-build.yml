@@ -64,6 +64,11 @@ jobs:
       - name: Xcode version
         run: xcodebuild -version
 
+      - name: Copy Telex engine into keyboard target
+        run: |
+          mkdir -p targets/keyboard/Engine
+          cp engine/Sources/Telex/*.swift targets/keyboard/Engine/
+
       - name: Prebuild native project (+ pod install)
         run: npx expo prebuild -p ios --clean
 

@@ -1,8 +1,11 @@
 # engine: Swift Package `KyxEngine`
 
-Thuần Swift, không UIKit. Chạy test bằng `swift test --package-path engine`.
+Thuần Swift, không UIKit. Test: `swift test --package-path engine` (CI, macOS).
 
 | File | Vai trò |
 |---|---|
-| `Sources/Telex/Telex.swift` | M0: chỉ có khung. Engine Telex viết theo TDD ở M2 |
-| `Tests/TelexTests/TelexTests.swift` | Test dùng Swift Testing |
+| `Sources/Telex/Telex.swift` | `Telex.apply(word:key:style:)`. Bản port 1-1 của `docs/mockup/telex.js` |
+| `Tests/TelexTests/TelexTests.swift` | Chạy toàn bộ test cases trong file JSON (Swift Testing) |
+| `Tests/TelexTests/Resources/telex-vectors.json` | Test cases dùng chung cho bản JS và bản Swift. Thêm case mới vào đây |
+
+Khi build IPA, CI chép `Sources/Telex/*.swift` vào `targets/keyboard/Engine/`.

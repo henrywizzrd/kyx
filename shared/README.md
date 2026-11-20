@@ -1,10 +1,11 @@
 # shared: hợp đồng giữa app chứa và bàn phím
 
-App Group: `group.com.henrywizzrd.kyx`
+App Group: `group.com.henrywizzrd.kyx` (UserDefaults suite)
 
-| Khoá (UserDefaults suite) | Ai ghi | Ai đọc | Kiểu |
+| Khoá | Ai ghi | Ai đọc | Nội dung |
 |---|---|---|---|
-| `host.ping` | app chứa | bàn phím | chuỗi ISO8601 |
-| `keyboard.ping` | bàn phím (cần Full Access, chờ xác nhận) | app chứa | chuỗi ISO8601 |
+| `settings` | app chứa | bàn phím | Chuỗi JSON `{click, haptic, autocap, doubleSpace, tone: "new"/"old", defaultLang: "VI"/"EN", height: 0.85–1.2, theme: "system"/"light"/"dark"}` |
+| `log` | bàn phím (cần Full Access) | app chứa | Các dòng `HH:mm:ss sự kiện` nối bằng `\n`, giữ tối đa 200 dòng |
 
-Bản sao các hằng số: `host/shared.ts`, `targets/keyboard/Log/AppGroupProbe.swift`.
+Bản sao: `host/shared.ts` + `host/settings.ts`, `targets/keyboard/Shared/KyxSettings.swift`, `targets/keyboard/Log/KeyboardLog.swift`.
+Bàn phím tự lưu ngôn ngữ dùng lần cuối trong UserDefaults riêng của nó (`kyx.lastLang`).

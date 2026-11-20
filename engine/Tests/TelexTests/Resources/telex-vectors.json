@@ -36,5 +36,9 @@
   {"keys": "baz", "style": "new", "out": "baz"},
   {"keys": "s", "style": "new", "out": "s"},
   {"keys": "toi la nguowif Vieejt", "style": "new", "out": "toi la người Việt"},
-  {"keys": "tooi laf nguwowif Vieejt Nam", "style": "new", "out": "tôi là người Việt Nam"}
+  {"keys": "tooi laf nguwowif Vieejt Nam", "style": "new", "out": "tôi là người Việt Nam"},
+  {"keys": "ww", "style": "new", "out": "w"},
+  {"keys": "WW", "style": "new", "out": "W"},
+  {"keys": "tww", "style": "new", "out": "tw"},
+  {"keys": "www", "style": "new", "out": "ww"}
 ]

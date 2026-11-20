@@ -9,6 +9,10 @@ let package = Package(
     ],
     targets: [
         .target(name: "Telex"),
-        .testTarget(name: "TelexTests", dependencies: ["Telex"]),
+        .testTarget(
+            name: "TelexTests",
+            dependencies: ["Telex"],
+            resources: [.copy("Resources/telex-vectors.json")]
+        ),
     ]
 )

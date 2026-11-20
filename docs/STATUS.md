@@ -1,20 +1,21 @@
 # Trạng thái
 
 ## Roadmap
-- **M0** "hello keyboard": build xong, phát hành `v0.0.1`. Chưa test trên máy.
-- **M1** Layout giống bản mẫu + trang 123/#+= + Shift/Caps Lock + log (vì đã bật Full Access) ← **tiếp theo**
-- **M2** Engine Telex (TDD) + đổi VI/EN + kiểu bỏ dấu hoà/hòa
-- **M3** Cử chỉ: trackpad 4 hướng trên phím cách, vuốt ⌫ để xoá theo từ, giữ phím để hiện chữ có dấu
-- **M4** Trang Cài đặt trong app (âm, rung, tự viết hoa, cách đôi ra dấu chấm, kiểu bỏ dấu, ngôn ngữ mặc định, theme, chiều cao) + đồng bộ qua App Group
-- **M5** Hoàn thiện, đo bộ nhớ và độ trễ
+- **M0** "hello keyboard": phát hành `v0.0.1`, chưa test trên máy.
+- **M1–M4** (gộp làm một đợt, đang chờ CI xanh và Tyson test `v0.1.0`):
+  - Layout giống bản mẫu, 3 trang, Shift/Caps Lock, phím VI/EN ở ô emoji, nhãn VI/EN giữa phím cách
+  - Telex (engine Swift, pass bộ test cases JSON), kiểu bỏ dấu hoà/hòa
+  - Cử chỉ: trackpad 4 hướng, ⌫ vuốt trái xoá theo từ, giữ phím để hiện chữ có dấu, gõ 2 ngón
+  - Cài đặt trong app + đồng bộ App Group, âm/rung, log (bộ nhớ, độ trễ)
+- **M5** Hoàn thiện, đo bộ nhớ và độ trễ, sửa lỗi từ lần test trên máy
 
-Spec hành vi: `docs/mockup/index.html` (ADR-010). Telex: `docs/mockup/telex.js` + test cases `engine/Tests/TelexTests/Resources/telex-vectors.json` (38 case, CI chạy). Engine Swift ở M2 phải pass cùng bộ test cases này.
+Spec hành vi: `docs/mockup/index.html` + `telex.js` (ADR-010).
 
-## Đang chờ
-- Tyson xem bản mẫu v3 (đã có Telex) và duyệt. Sau đó Claude làm M1 trở đi, build `v0.1.0` để test chung với M0.
-
-## Lần chạy CI gần nhất
-- e562d7c: success
+## Cần đo trên máy
+- Trackpad lên/xuống dòng (chỉ biết vị trí `\n`, không biết chỗ ngắt dòng tự động)
+- Xoá theo từ: bàn phím chỉ thấy đoạn văn ngắn trước con trỏ
+- `adjustTextPosition` với emoji (tính theo UTF-16, chưa kiểm chứng)
+- Âm click: dùng `AudioServicesPlaySystemSound(1104)` khi bật Full Access
 
 ## Bug đã biết
 (chưa có)

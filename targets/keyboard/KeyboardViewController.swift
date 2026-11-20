@@ -1,88 +1,123 @@
+import AudioToolbox
 import UIKit
 
-/// M0 "hello keyboard": gõ được chữ "a", xoá, xuống dòng, chuyển bàn phím,
-/// và hiện kết quả kiểm tra App Group (xem Log/AppGroupProbe.swift).
-class KeyboardViewController: UIInputViewController {
+/// Điểm vào của bàn phím Kyx. Phần vẽ và chạm nằm trong KeyboardView,
+/// phần sửa văn bản (Telex, trackpad, xoá theo từ) nằm trong Input/TextActions.swift.
+final class KeyboardViewController: UIInputViewController {
+    let keyboard = KeyboardView()
+    var settings = KyxSettings()
+    var stats = KeystrokeStats()
+    private var heightConstraint: NSLayoutConstraint?
+    private lazy var haptic = UIImpactFeedbackGenerator(style: .light)
 
-    private let statusLabel = UILabel()
-    private var globeButton: UIButton?
+    private let langKey = "kyx.lastLang"
+    private let seenDefaultKey = "kyx.seenDefaultLang"
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        setUpViews()
-        refreshProbe()
+        keyboard.delegate = self
+        keyboard.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(keyboard)
+        let height = view.heightAnchor.constraint(equalToConstant: keyboard.preferredHeight)
+        height.priority = UILayoutPriority(999)
+        heightConstraint = height
+        NSLayoutConstraint.activate([
+            keyboard.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            keyboard.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            keyboard.topAnchor.constraint(equalTo: view.topAnchor),
+            keyboard.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            height,
+        ])
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        reloadSettings()
+        stats = KeystrokeStats()
+        keyboardDidFinishEdit()
+        KeyboardLog.write(String(format: "open fullAccess=%@ mem=%.1fMB", hasFullAccess ? "on" : "off", KeyboardLog.memoryMB()))
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        KeyboardLog.write(String(format: "close %@ mem=%.1fMB", stats.summary, KeyboardLog.memoryMB()))
     }
 
     override func viewWillLayoutSubviews() {
-        // Chỉ hiện 🌐 khi iOS yêu cầu (máy Face ID đã có nút 🌐 của hệ thống).
-        globeButton?.isHidden = !needsInputModeSwitchKey
+        keyboard.showsGlobe = needsInputModeSwitchKey
         super.viewWillLayoutSubviews()
     }
 
-    // MARK: - UI
-
-    private func setUpViews() {
-        statusLabel.font = .monospacedSystemFont(ofSize: 11, weight: .regular)
-        statusLabel.numberOfLines = 0
-        statusLabel.textColor = .secondaryLabel
-
-        let keys = UIStackView(arrangedSubviews: [
-            makeKey("🌐", action: nil),
-            makeKey("a", action: #selector(typeA)),
-            makeKey("⌫", action: #selector(deleteBackward)),
-            makeKey("⏎", action: #selector(insertNewline)),
-            makeKey("Test", action: #selector(refreshProbe)),
-        ])
-        keys.axis = .horizontal
-        keys.spacing = 6
-        keys.distribution = .fillEqually
-
-        let root = UIStackView(arrangedSubviews: [statusLabel, keys])
-        root.axis = .vertical
-        root.spacing = 8
-        root.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(root)
-
-        NSLayoutConstraint.activate([
-            root.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 6),
-            root.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -6),
-            root.topAnchor.constraint(equalTo: view.topAnchor, constant: 8),
-            root.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -8),
-            keys.heightAnchor.constraint(equalToConstant: 46),
-            view.heightAnchor.constraint(equalToConstant: 200),
-        ])
+    override func textDidChange(_ textInput: UITextInput?) {
+        super.textDidChange(textInput)
+        applyTheme()
+        keyboardDidFinishEdit()
     }
 
-    private func makeKey(_ title: String, action: Selector?) -> UIButton {
-        let button = UIButton(type: .system)
-        button.setTitle(title, for: .normal)
-        button.titleLabel?.font = .systemFont(ofSize: 20)
-        button.setTitleColor(.label, for: .normal)
-        button.backgroundColor = .systemBackground
-        button.layer.cornerRadius = 6
-        if let action {
-            button.addTarget(self, action: action, for: .touchUpInside)
-        } else {
-            // API chuẩn của Apple để mở danh sách bàn phím.
-            button.addTarget(self, action: #selector(handleInputModeList(from:with:)), for: .allTouchEvents)
-            globeButton = button
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        applyTheme()
+    }
+
+    override func didReceiveMemoryWarning() {
+        super.didReceiveMemoryWarning()
+        KeyboardLog.write(String(format: "MEMORY WARNING mem=%.1fMB", KeyboardLog.memoryMB()))
+    }
+
+    // MARK: - Cài đặt
+
+    private func reloadSettings() {
+        settings = KyxSettings.load()
+        keyboard.keyHeight = (46 * settings.height).rounded()
+        heightConstraint?.constant = keyboard.preferredHeight
+
+        // Ngôn ngữ: giữ lựa chọn lần trước; nếu người dùng vừa đổi "ngôn ngữ mặc định" thì theo cài đặt.
+        let local = UserDefaults.standard
+        if local.string(forKey: seenDefaultKey) != settings.defaultLang {
+            local.set(settings.defaultLang, forKey: seenDefaultKey)
+            local.set(settings.defaultLang, forKey: langKey)
         }
-        return button
+        keyboard.language = local.string(forKey: langKey) ?? settings.defaultLang
+        applyTheme()
     }
 
-    // MARK: - Actions
+    private func applyTheme() {
+        let dark: Bool
+        switch settings.theme {
+        case "dark": dark = true
+        case "light": dark = false
+        default: dark = textDocumentProxy.keyboardAppearance == .dark || traitCollection.userInterfaceStyle == .dark
+        }
+        keyboard.palette = dark ? .dark : .light
+    }
+}
 
-    @objc private func typeA() { textDocumentProxy.insertText("a") }
-    @objc private func deleteBackward() { textDocumentProxy.deleteBackward() }
-    @objc private func insertNewline() { textDocumentProxy.insertText("\n") }
+// MARK: - KeyboardViewDelegate
 
-    @objc private func refreshProbe() {
-        let r = AppGroupProbe.run()
-        statusLabel.text = """
-        Kyx M0 · Full Access: \(hasFullAccess ? "ON" : "OFF")
-        container: \(r.containerFound ? "found" : "MISSING")
-        host.ping: \(r.hostPing ?? "(none)")
-        file write: \(r.fileWrite) · defaults write: \(r.defaultsWrite)
-        """
+extension KeyboardViewController: KeyboardViewDelegate {
+    func keyboardFeedback() {
+        if settings.click {
+            if hasFullAccess { AudioServicesPlaySystemSound(1104) } else { UIDevice.current.playInputClick() }
+        }
+        if settings.haptic && hasFullAccess { haptic.impactOccurred() }
+    }
+
+    func keyboardToggleLanguage() {
+        keyboard.language = keyboard.language == "VI" ? "EN" : "VI"
+        UserDefaults.standard.set(keyboard.language, forKey: langKey)
+    }
+
+    func keyboardGlobe(from view: UIView, with event: UIEvent?) {
+        guard let event else { return }
+        handleInputModeList(from: view, with: event)
+    }
+
+    func keyboardDidFinishEdit() {
+        guard settings.autocap, keyboard.page == .letters, keyboard.shift != .lock else { return }
+        if textDocumentProxy.autocapitalizationType == UITextAutocapitalizationType.none {
+            if keyboard.shift == .once { keyboard.shift = .off }
+            return
+        }
+        keyboard.shift = shouldCapitalize() ? .once : .off
     }
 }

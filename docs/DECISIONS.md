@@ -1,5 +1,10 @@
 # Nhật ký quyết định (mới nhất ở trên)
 
+## 2026-11-20 · ADR-011: Phím VI/EN và cách nối engine
+- Phím cách hiện chữ VI hoặc EN ở giữa. Nút 🌐 của iOS dùng để chuyển giữa Kyx và bàn phím khác. Để đổi VI↔EN ngay trong Kyx, tạm dùng phím ở vị trí emoji (hiện ngôn ngữ sẽ chuyển sang). Chờ Tyson xác nhận.
+- Gõ `ww` ra `w` (khi chữ ư đứng riêng).
+- Engine: file thật nằm ở `engine/`, CI chép vào `targets/keyboard/Engine/` trước khi build. Không dùng symlink, vì checkout trên Windows có thể làm hỏng symlink.
+
 ## 2026-11-20 · ADR-010: Bản mẫu HTML là spec về hành vi
 Bản mẫu v2 (artifact "Kyx – bản mẫu v2", nguồn ở `docs/mockup/index.html`) quy định layout, cử chỉ và danh sách cài đặt. Code Swift phải làm theo bản mẫu này.
 

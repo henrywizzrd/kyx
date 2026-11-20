@@ -1,5 +1,10 @@
 # Nhật ký quyết định (mới nhất ở trên)
 
+## 2026-11-20 · ADR-012: Workflow build-test-apps theo spec của Tyson
+- `[build]` hoặc bấm tay → checks (tsc, Telex JS + Swift) → archive iOS không ký → ký ad-hoc kèm entitlements → `gh release create test-build-N --prerelease`.
+- Không có tag → không chạy gì. Thay thế `ios-build.yml` và ADR-007.
+- Chưa làm job Android: host Android không có bàn phím iOS, build ra không có ích. Chưa làm `[update]`: cần cài `expo-updates`, có project EAS và secret `EXPO_TOKEN`. Đang chờ Tyson quyết.
+
 ## 2026-11-20 · ADR-011: Phím VI/EN và cách nối engine
 - Phím cách hiện chữ VI hoặc EN ở giữa. Nút 🌐 của iOS dùng để chuyển giữa Kyx và bàn phím khác. Để đổi VI↔EN ngay trong Kyx, tạm dùng phím ở vị trí emoji (hiện ngôn ngữ sẽ chuyển sang). Chờ Tyson xác nhận.
 - Gõ `ww` ra `w` (khi chữ ư đứng riêng).
@@ -16,7 +21,7 @@ Bản mẫu v2 (artifact "Kyx – bản mẫu v2", nguồn ở `docs/mockup/inde
 ## 2026-11-20 · ADR-008: Bật Full Access (thay ADR-004)
 `RequestsOpenAccess = true` để rung khi gõ và để bàn phím ghi log vào App Group. Nhờ đó gỡ được ADR-006. Bàn phím vẫn phải chạy được khi người dùng tắt Full Access: không rung, không ghi log.
 
-## 2026-11-20 · ADR-007: Tạo Release bằng workflow_dispatch
+## 2026-11-20 · ADR-007: Tạo Release bằng workflow_dispatch (ĐÃ THAY bằng ADR-012)
 Phiên của Claude không push tag được (bị chặn 403). Muốn ra Release: vào Actions → ios-build → Run workflow → nhập `release_tag` (vd `v0.0.1`). Push tag `v*` từ máy của Tyson vẫn chạy được như cũ.
 
 ## 2026-11-20 · ADR-006: Câu hỏi mở: log của bàn phím khi tắt Full Access (đã giải quyết bằng ADR-008)

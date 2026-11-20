@@ -11,7 +11,7 @@ Bàn phím iOS tự làm: tiếng Anh + tiếng Việt Telex. App chứa viết 
 | `shared/` | Hợp đồng dùng chung: tên App Group, các khoá, định dạng log. |
 | `host/` | Source TS của app chứa (onboarding, settings, Log). `index.ts` ở gốc import `host/App`. |
 | `docs/` | ARCHITECTURE, DECISIONS (ADR), STATUS. |
-| `.github/workflows/ios-build.yml` | CI: engine tests + typecheck + build IPA. |
+| `.github/workflows/build-test-apps.yml` | CI chỉ chạy khi commit có `[build]` (hoặc bấm tay): kiểm tra → IPA chưa ký → Release prerelease `Kyx test build N`. |
 
 Project Expo nằm ở gốc repo (`app.json`, `package.json`), vì `@bacons/apple-targets` đọc thư mục `/targets` ở gốc. `ios/` sinh ra bằng prebuild và không commit.
 
@@ -24,8 +24,8 @@ Project Expo nằm ở gốc repo (`app.json`, `package.json`), vì `@bacons/app
 - `npx expo prebuild -p ios --clean`: sinh `ios/` để kiểm tra, không commit
 
 ## Quy tắc
-- Commit gắn tag `[build]` khi thay đổi native/Swift (cần IPA mới), `[update]` khi chỉ đổi JS/TS.
-- Trước khi push: typecheck/test phải pass. Sau khi push: theo dõi CI tới khi xanh.
+- Commit gắn tag `[build]` khi cần IPA mới (CI build + tạo Release). Commit không có tag thì CI không chạy. `[update]` (OTA) chưa bật, xem ADR-012.
+- Trước khi push: `npx tsc --noEmit`, `node docs/mockup/telex.test.js`, `CI=1 npx expo export --platform ios`. Sau khi push: theo dõi CI theo SHA tới khi `completed` + `success`. Thất bại 2 lần thì dừng lại và báo Tyson.
 - Không commit `.env`, chứng chỉ, provisioning profile, token.
 - Mỗi file nên < 400 dòng. `engine/` không được import UIKit.
 - Xong một milestone: cập nhật `docs/STATUS.md`, README của thư mục vừa sửa, và file này nếu bản đồ đổi.

@@ -1,0 +1,131 @@
+name: build-test-apps
+
+# Commit có [build] → kiểm tra + build IPA chưa ký + tạo GitHub Release (prerelease).
+# Không có tag → CI không chạy gì. Có thể bấm tay ở tab Actions (workflow_dispatch).
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: build-test-apps-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[build]')
+    runs-on: macos-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Typecheck host app
+        run: npx tsc --noEmit
+      - name: Telex vectors (JS mockup engine)
+        run: node docs/mockup/telex.test.js
+      - name: Telex engine tests (Swift)
+        run: swift test --package-path engine
+
+  ios:
+    needs: checks
+    runs-on: macos-latest
+    timeout-minutes: 60
+    env:
+      EXPO_NO_TELEMETRY: "1"
+      APP: build/Kyx.xcarchive/Products/Applications/Kyx.app
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Copy Telex engine into keyboard target
+        run: |
+          mkdir -p targets/keyboard/Engine
+          cp engine/Sources/Telex/*.swift targets/keyboard/Engine/
+
+      - name: Prebuild native project (+ pod install)
+        run: npx expo prebuild --platform ios --clean
+
+      - name: Archive (no code signing)
+        run: |
+          set +e
+          xcodebuild \
+            -workspace ios/Kyx.xcworkspace \
+            -scheme Kyx \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -archivePath build/Kyx.xcarchive \
+            archive \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            > xcodebuild.log 2>&1
+          status=$?
+          if [ $status -ne 0 ]; then
+            echo "::group::error lines"; grep -n "error:" xcodebuild.log | head -50; echo "::endgroup::"
+            echo "::group::last 80 lines"; tail -n 80 xcodebuild.log; echo "::endgroup::"
+            exit $status
+          fi
+          test -d "$APP/PlugIns/KyxKeyboard.appex"
+
+      - name: Upload xcodebuild.log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xcodebuild-log
+          path: xcodebuild.log
+
+      # Bản không ký sẽ không mang entitlements. Ký ad-hoc kèm App Group
+      # để ESign đọc lại được khi ký lại (ADR-005).
+      - name: Ad-hoc sign with entitlements
+        run: |
+          set -e
+          find "$APP" -name "*.framework" -o -name "*.dylib" | while read -r f; do codesign -f -s - "$f"; done
+          codesign -f -s - --entitlements ios/.targets/KyxKeyboard/generated.entitlements "$APP/PlugIns/KyxKeyboard.appex"
+          codesign -f -s - --entitlements ios/Kyx/Kyx.entitlements "$APP"
+          codesign -d --entitlements - "$APP/PlugIns/KyxKeyboard.appex"
+
+      - name: Package IPA
+        run: |
+          mkdir -p out/Payload
+          cp -R "$APP" out/Payload/
+          cd out && zip -qry Kyx-unsigned.ipa Payload && ls -la Kyx-unsigned.ipa
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Kyx-ipa
+          path: out/Kyx-unsigned.ipa
+
+  release:
+    needs: ios
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: Kyx-ipa
+          path: out
+          merge-multiple: true
+      - name: Create GitHub Release (prerelease)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "test-build-${{ github.run_number }}" out/Kyx-unsigned.ipa \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --prerelease \
+            --title "Kyx test build ${{ github.run_number }}" \
+            --notes "Commit $GITHUB_SHA. Cài: tải Kyx-unsigned.ipa → ký bằng ESign (giữ nguyên bundle ID) → cài → Cài đặt → Bàn phím → bật Kyx + Cho phép Truy cập đầy đủ."

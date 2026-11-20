@@ -1,5 +1,8 @@
 # Nhật ký quyết định (mới nhất ở trên)
 
+## 2026-11-20 · ADR-007: Tạo Release bằng workflow_dispatch
+Phiên của Claude không push tag được (bị chặn 403). Muốn ra Release: vào Actions → ios-build → Run workflow → nhập `release_tag` (vd `v0.0.1`). Push tag `v*` từ máy của Tyson vẫn chạy được như cũ.
+
 ## 2026-11-20 · ADR-006: Câu hỏi mở: log của bàn phím khi tắt Full Access
 Apple ghi rõ: khi tắt Full Access thì shared container chỉ đọc được. Vì vậy bàn phím không thể ghi log vào App Group trong v1.
 Kết quả M0 sẽ cho dữ liệu thực tế. Phương án sẽ chọn sau M0: (a) bật Full Access ở bản dev, (b) bàn phím tự hiện panel log của nó, (c) khác.

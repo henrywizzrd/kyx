@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Kyx – bản mẫu v2</title>
+<style>
+  /* VOICE: sản phẩm thật, gọn như iOS. IDEA: app Kyx + bàn phím chạy thử.
+     PICTURE: bàn phím là chính. COLOUR: iOS tối/sáng. TYPE: SF/system. LAYOUT: tab trên, bàn phím dưới. */
+  :root { --bg:#000; --card:#1c1c1e; --sep:#38383a; --ink:#fff; --muted:#8e8e93; --blue:#0a84ff; --green:#30d158; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; min-width: 0; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink);
+    font: 16px/1.4 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif; overflow-x: clip; }
+  .wrap { width: 100%; max-width: 440px; margin: 0 auto; min-height: 100%; display: flex; flex-direction: column; }
+  .tabs { display: flex; margin: 14px 16px 6px; background: #2c2c2e; border-radius: 9px; padding: 2px; }
+  .tabs button { flex: 1; border: 0; background: none; color: var(--ink); font: 600 14px/1 inherit; padding: 9px 0; border-radius: 7px; cursor: pointer; }
+  .tabs button.on { background: #636366; }
+  .view { display: none; flex: 1; flex-direction: column; }
+  .view.on { display: flex; }
+  .hint { margin: 6px 16px 0; font-size: 13px; color: var(--muted); }
+  .hint b { color: #d1d1d6; font-weight: 600; }
+  .field { margin: 10px 16px; height: 130px; overflow-y: auto; padding: 12px; border-radius: 12px; background: var(--card);
+    font-size: 17px; line-height: 1.45; white-space: pre-wrap; word-break: break-word; }
+  .sel { background: rgba(10,132,255,.45); border-radius: 2px; }
+  .caret { display: inline-block; width: 2px; height: 1.15em; margin: 0 -1px; background: var(--blue); vertical-align: text-bottom; animation: blink 1s steps(1) infinite; }
+  .trackpad-on .caret { animation: none; }
+  @keyframes blink { 50% { opacity: 0; } }
+  .status { margin: 0 16px; font-size: 12px; color: var(--muted); min-height: 17px; }
+  .spacer { flex: 1; }
+
+  /* Bàn phím */
+  .kb { --panel:#262626; --key:#4a4a4a; --fn:#3a3a3a; --press:#6a6a6a; --kt:#fff; --kh:46px;
+    background: var(--panel); border-radius: 28px 28px 0 0; padding: 10px 1.2% 0; user-select: none; -webkit-user-select: none; touch-action: none; }
+  .kb.light { --panel:#d1d3d9; --key:#fff; --fn:#abb0ba; --press:#c4c7cd; --kt:#000; }
+  .row { display: flex; justify-content: center; gap: 1.6%; margin-bottom: 11px; }
+  .key { position: relative; height: var(--kh); flex: 0 0 8.4%; border-radius: 9px; background: var(--key); color: var(--kt);
+    display: flex; align-items: center; justify-content: center; font-size: 25px; box-shadow: 0 1px 0 rgba(0,0,0,.35); }
+  .key.pressed { background: var(--press); }
+  .key.fn { background: var(--fn); font-size: 17px; }
+  .key.wide { flex: 0 0 12.6%; }
+  .key.fn.on { background: var(--kt); color: var(--panel); }
+  .key.r123, .key.emoji { flex: 0 0 11.2%; }
+  .key.space { flex: 1 1 auto; justify-content: flex-end; align-items: flex-end; padding: 0 10px 6px; }
+  .key.ret { flex: 0 0 23%; }
+  .lang { font-size: 13px; font-weight: 700; letter-spacing: .5px; color: #8a8a8a; padding: 6px 0 0 10px; }
+  .lang b { color: var(--kt); opacity: .85; }
+  .kb svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .popup { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); margin-bottom: 4px; min-width: 120%;
+    padding: 6px 0; border-radius: 10px; background: var(--key); color: var(--kt); font-size: 32px; text-align: center;
+    pointer-events: none; box-shadow: 0 2px 8px rgba(0,0,0,.4); display: none; z-index: 2; }
+  .key.pressed .popup { display: block; }
+  .alts { position: absolute; bottom: 100%; margin-bottom: 4px; display: flex; padding: 4px; gap: 2px; border-radius: 10px;
+    background: var(--key); box-shadow: 0 2px 10px rgba(0,0,0,.5); z-index: 3; pointer-events: none; }
+  .alts span { width: 34px; height: 44px; display: flex; align-items: center; justify-content: center; font-size: 24px; border-radius: 7px; color: var(--kt); }
+  .alts span.on { background: var(--blue); color: #fff; }
+  /* Trackpad: giống iOS, chữ trên phím biến mất */
+  .kb.trackpad .key { color: transparent; }
+  .kb.trackpad .key svg, .kb.trackpad .lang { opacity: 0; }
+  .system { background: var(--panel); height: 70px; display: flex; align-items: flex-start; padding: 6px 4% 0; color: var(--muted); font-size: 11px; gap: 10px; }
+  .kb.light + .system { --panel:#d1d3d9; color: #3c3c43; }
+  .kb:not(.light) + .system { --panel:#262626; }
+
+  /* Cài đặt (mô phỏng app chứa) */
+  .settings { padding: 4px 16px 32px; }
+  .group-t { margin: 18px 12px 6px; font-size: 13px; color: var(--muted); }
+  .group { background: var(--card); border-radius: 12px; overflow: hidden; }
+  .item { display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 8px 14px; border-top: .5px solid var(--sep); }
+  .item:first-child { border-top: 0; }
+  .item .t { flex: 1; }
+  .item .t small { display: block; color: var(--muted); font-size: 12px; }
+  .sw { position: relative; width: 51px; height: 31px; border-radius: 16px; background: #39393d; border: 0; cursor: pointer; flex: none; transition: background .2s; }
+  .sw::after { content: ""; position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%; background: #fff; transition: transform .2s; }
+  .sw.on { background: var(--green); }
+  .sw.on::after { transform: translateX(20px); }
+  .seg { display: flex; background: #2c2c2e; border-radius: 8px; padding: 2px; flex: none; }
+  .seg button { border: 0; background: none; color: var(--ink); font: 13px/1 inherit; padding: 7px 10px; border-radius: 6px; cursor: pointer; }
+  .seg button.on { background: #636366; }
+  input[type=range] { flex: none; width: 130px; accent-color: var(--blue); }
+  .note { margin: 6px 12px 0; font-size: 12px; color: var(--muted); }
+  .sw:focus-visible, .seg button:focus-visible, .tabs button:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { .caret { animation: none; } .sw, .sw::after { transition: none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="tabs" role="tablist">
+    <button id="tabType" class="on">Gõ thử</button>
+    <button id="tabSettings">Cài đặt</button>
+  </div>
+
+  <section class="view on" id="viewType">
+    <p class="hint"><b>Giữ phím cách</b> rồi vuốt bốn hướng để di chuyển con trỏ. <b>Giữ ⌫</b> rồi vuốt trái để chọn từng từ, nhấc tay để xoá. <b>Giữ a e o u i y d</b> để chọn chữ có dấu. Chạm <b>VI EN</b> để đổi ngôn ngữ.</p>
+    <div class="field" id="field"></div>
+    <div class="status" id="status"></div>
+    <div class="spacer"></div>
+    <div class="kb" id="kb"></div>
+    <div class="system">
+      <svg viewBox="0 0 24 24" style="width:34px;height:34px;fill:none;stroke:currentColor;stroke-width:2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></svg>
+      <span style="margin-top:9px">Vùng hệ thống: iOS tự vẽ nút 🌐, Kyx không vẽ</span>
+    </div>
+  </section>
+
+  <section class="view" id="viewSettings">
+    <div class="settings" id="settings"></div>
+  </section>
+</div>
+
+<script>
+{
+const $ = (id) => document.getElementById(id);
+const ICONS = {
+  shift: '<svg viewBox="0 0 24 24"><path d="M12 4 3 13h5v7h8v-7h5z"/></svg>',
+  shiftOn: '<svg viewBox="0 0 24 24" style="fill:currentColor"><path d="M12 4 3 13h5v7h8v-7h5z"/></svg>',
+  lock: '<svg viewBox="0 0 24 24" style="fill:currentColor"><path d="M12 3 3 12h5v5h8v-5h5z"/><path d="M8 20h8"/></svg>',
+  del: '<svg viewBox="0 0 24 24"><path d="M21 5H9l-6 7 6 7h12a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1z"/><path d="m12 9 6 6m0-6-6 6"/></svg>',
+  ret: '<svg viewBox="0 0 24 24"><path d="M19 6v6a2 2 0 0 1-2 2H5"/><path d="m9 10-4 4 4 4"/></svg>',
+  emoji: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0M9 9.5h.01M15 9.5h.01"/></svg>',
+};
+const LAYOUTS = {
+  letters: [['q','w','e','r','t','y','u','i','o','p'],['a','s','d','f','g','h','j','k','l'],
+            ['#shift','z','x','c','v','b','n','m','#del'],['#123','#emoji','#space','#ret']],
+  numbers: [['1','2','3','4','5','6','7','8','9','0'],['-','/',':',';','(',')','$','&','@','"'],
+            ['#sym','.',',','?','!',"'",'#del'],['#abc','#emoji','#space','#ret']],
+  symbols: [['[',']','{','}','#','%','^','*','+','='],['_','\\','|','~','<','>','€','£','¥','•'],
+            ['#num','.',',','?','!',"'",'#del'],['#abc','#emoji','#space','#ret']],
+};
+const ALTS = { a:'aàáảãạăâ', e:'eèéẻẽẹê', o:'oòóỏõọôơ', u:'uùúủũụư', i:'iìíỉĩị', y:'yỳýỷỹỵ', d:'dđ' };
+
+const DEFAULTS = { click: true, haptic: true, autocap: true, doubleSpace: true, tone: 'new', defaultLang: 'VI', height: 1, theme: 'system' };
+let settings = { ...DEFAULTS };
+try { Object.assign(settings, JSON.parse(localStorage.getItem('kyx-settings') || '{}')); } catch (e) {}
+
+const st = { page: 'letters', shift: 'off', lang: settings.defaultLang, text: '', caret: 0, sel: null, lastShift: 0, gesture: false };
+const kb = $('kb'), field = $('field'), statusEl = $('status');
+
+/* ---------- Văn bản ---------- */
+function renderField() {
+  const a = st.sel ?? st.caret;
+  const esc = (s) => s.replace(/[&<>]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;' }[c]));
+  field.innerHTML = esc(st.text.slice(0, a)) + (st.sel != null ? `<span class="sel">${esc(st.text.slice(a, st.caret))}</span>` : '')
+    + '<span class="caret"></span>' + esc(st.text.slice(st.caret));
+  field.querySelector('.caret')?.scrollIntoView({ block: 'nearest' });
+  const pageName = { letters: 'chữ', numbers: '123', symbols: '#+=' }[st.page];
+  statusEl.textContent = `${st.lang} · trang ${pageName} · shift ${st.shift} · con trỏ ${st.caret}/${st.text.length}`;
+}
+function insert(s) {
+  st.text = st.text.slice(0, st.caret) + s + st.text.slice(st.caret);
+  st.caret += s.length;
+}
+function deleteBack() {
+  if (st.caret === 0) return;
+  st.text = st.text.slice(0, st.caret - 1) + st.text.slice(st.caret);
+  st.caret--;
+}
+function wordStartBack(n) {
+  let i = st.caret;
+  for (let k = 0; k < n && i > 0; k++) {
+    while (i > 0 && /\s/.test(st.text[i - 1])) i--;
+    while (i > 0 && !/\s/.test(st.text[i - 1])) i--;
+  }
+  return i;
+}
+function moveLine(dir) {
+  const t = st.text, c = st.caret;
+  const lineStart = t.lastIndexOf('\n', c - 1) + 1, col = c - lineStart;
+  if (dir < 0) {
+    if (lineStart === 0) { st.caret = 0; return; }
+    const prevStart = t.lastIndexOf('\n', lineStart - 2) + 1;
+    st.caret = Math.min(prevStart + col, lineStart - 1);
+  } else {
+    const nextNl = t.indexOf('\n', c);
+    if (nextNl === -1) { st.caret = t.length; return; }
+    const nextEnd = t.indexOf('\n', nextNl + 1);
+    st.caret = Math.min(nextNl + 1 + col, nextEnd === -1 ? t.length : nextEnd);
+  }
+}
+function autoCap() {
+  if (!settings.autocap || st.page !== 'letters' || st.shift === 'lock') return;
+  const before = st.text.slice(0, st.caret);
+  const want = before === '' || /[.!?]\s+$/.test(before) || /\n$/.test(before);
+  st.shift = want ? 'once' : 'off';
+}
+
+/* ---------- Phản hồi ---------- */
+let audio;
+function feedback() {
+  if (settings.click) {
+    try {
+      audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+      const o = audio.createOscillator(), g = audio.createGain();
+      o.frequency.value = 1800; g.gain.setValueAtTime(0.06, audio.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.0001, audio.currentTime + 0.03);
+      o.connect(g).connect(audio.destination); o.start(); o.stop(audio.currentTime + 0.035);
+    } catch (e) {}
+  }
+  if (settings.haptic) try { navigator.vibrate?.(8); } catch (e) {}
+}
+
+/* ---------- Dựng bàn phím ---------- */
+function render() {
+  const dark = settings.theme === 'dark' || (settings.theme === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
+  kb.classList.toggle('light', !dark);
+  kb.style.setProperty('--kh', Math.round(46 * settings.height) + 'px');
+  kb.innerHTML = '';
+  for (const row of LAYOUTS[st.page]) {
+    const r = document.createElement('div'); r.className = 'row';
+    row.forEach(k => r.appendChild(makeKey(k)));
+    kb.appendChild(r);
+  }
+  renderField();
+}
+function label(k) { return st.page === 'letters' && st.shift !== 'off' ? k.toUpperCase() : k; }
+
+function makeKey(k) {
+  const el = document.createElement('div');
+  el.className = 'key';
+  if (!k.startsWith('#')) { charKey(el, k); return el; }
+  const simple = (cls, html, fn) => { el.classList.add(...cls); el.innerHTML = html; tap(el, fn); };
+  switch (k) {
+    case '#shift':
+      el.classList.add('fn', 'wide'); if (st.shift !== 'off') el.classList.add('on');
+      el.innerHTML = st.shift === 'lock' ? ICONS.lock : st.shift === 'once' ? ICONS.shiftOn : ICONS.shift;
+      tap(el, () => {
+        const now = Date.now();
+        st.shift = now - st.lastShift < 300 ? 'lock' : (st.shift === 'off' ? 'once' : 'off');
+        st.lastShift = now;
+      }); break;
+    case '#del': el.classList.add('fn', 'wide'); el.innerHTML = ICONS.del; deleteKey(el); break;
+    case '#123': case '#num': simple(['fn', k === '#123' ? 'r123' : 'wide'], '123', () => { st.page = 'numbers'; }); break;
+    case '#sym': simple(['fn', 'wide'], '#+=', () => { st.page = 'symbols'; }); break;
+    case '#abc': simple(['fn', 'r123'], 'ABC', () => { st.page = 'letters'; autoCap(); }); break;
+    case '#emoji': simple(['fn', 'emoji'], ICONS.emoji, () => flash('Emoji: để sau v1')); break;
+    case '#space': el.classList.add('space'); el.innerHTML = `<span class="lang">${st.lang === 'VI' ? '<b>VI</b> EN' : 'VI <b>EN</b>'}</span>`; spaceKey(el); break;
+    case '#ret': simple(['fn', 'ret'], ICONS.ret, () => { insert('\n'); autoCap(); }); break;
+  }
+  return el;
+}
+
+// Phím chức năng: thực hiện khi nhấc tay.
+function tap(el, fn) {
+  el.addEventListener('pointerdown', (e) => { e.preventDefault(); el.classList.add('pressed'); feedback(); });
+  el.addEventListener('pointerup', () => { if (!el.classList.contains('pressed')) return; el.classList.remove('pressed'); fn(); render(); });
+  el.addEventListener('pointerleave', () => el.classList.remove('pressed'));
+}
+
+// Phím chữ: giữ để hiện chữ có dấu, vuốt ngang để chọn.
+function charKey(el, k) {
+  el.textContent = label(k);
+  const pop = document.createElement('div'); pop.className = 'popup'; pop.textContent = label(k); el.appendChild(pop);
+  let timer, altsEl = null, idx = 0, x0 = 0;
+  const alts = st.page === 'letters' ? ALTS[k] : null;
+  el.addEventListener('pointerdown', (e) => {
+    e.preventDefault(); el.setPointerCapture(e.pointerId); el.classList.add('pressed'); feedback(); x0 = e.clientX;
+    if (alts) timer = setTimeout(() => {
+      el.classList.remove('pressed');
+      altsEl = document.createElement('div'); altsEl.className = 'alts';
+      altsEl.innerHTML = [...alts].map((c, i) => `<span class="${i === 0 ? 'on' : ''}">${label(c)}</span>`).join('');
+      el.appendChild(altsEl);
+      const r = el.getBoundingClientRect(), w = alts.length * 36 + 8;
+      const left = Math.max(4 - r.left, Math.min(0, innerWidth - 4 - r.left - w));
+      altsEl.style.left = left + 'px'; idx = 0;
+    }, 400);
+  });
+  el.addEventListener('pointermove', (e) => {
+    if (!altsEl) return;
+    const spans = altsEl.children, r = altsEl.getBoundingClientRect();
+    idx = Math.max(0, Math.min(spans.length - 1, Math.floor((e.clientX - r.left - 4) / 36)));
+    [...spans].forEach((s, i) => s.classList.toggle('on', i === idx));
+  });
+  el.addEventListener('pointerup', () => {
+    clearTimeout(timer); el.classList.remove('pressed');
+    const ch = altsEl ? label([...alts][idx]) : label(k);
+    altsEl?.remove(); altsEl = null;
+    insert(ch);
+    if (st.shift === 'once') st.shift = 'off';
+    render();
+  });
+  el.addEventListener('pointercancel', () => { clearTimeout(timer); altsEl?.remove(); altsEl = null; el.classList.remove('pressed'); });
+}
+
+// ⌫: chạm = xoá 1 ký tự, giữ = xoá lặp, giữ + vuốt trái = chọn từng từ, nhấc tay để xoá.
+function deleteKey(el) {
+  let repeatT, repeatI, x0 = 0, selecting = false;
+  const stopRepeat = () => { clearTimeout(repeatT); clearInterval(repeatI); };
+  el.addEventListener('pointerdown', (e) => {
+    e.preventDefault(); el.setPointerCapture(e.pointerId); el.classList.add('pressed'); feedback();
+    x0 = e.clientX; selecting = false; st.gesture = true;
+    deleteBack(); renderField();
+    repeatT = setTimeout(() => { repeatI = setInterval(() => { deleteBack(); renderField(); }, 80); }, 450);
+  });
+  el.addEventListener('pointermove', (e) => {
+    const dx = e.clientX - x0;
+    if (dx < -20) {
+      stopRepeat(); selecting = true;
+      const words = 1 + Math.floor((-dx - 20) / 24);
+      st.sel = wordStartBack(words); if (st.sel === st.caret) st.sel = null;
+      renderField(); statusEl.textContent = `Nhấc tay để xoá ${words} từ · vuốt lại sang phải để huỷ`;
+    } else if (selecting) { st.sel = null; renderField(); }
+  });
+  const end = () => {
+    stopRepeat(); el.classList.remove('pressed'); st.gesture = false;
+    if (selecting && st.sel != null) { st.text = st.text.slice(0, st.sel) + st.text.slice(st.caret); st.caret = st.sel; }
+    st.sel = null; autoCap(); render();
+  };
+  el.addEventListener('pointerup', end);
+  el.addEventListener('pointercancel', end);
+}
+
+// Phím cách: chạm = cách; giữ hoặc kéo ngang = trackpad 4 hướng.
+function spaceKey(el) {
+  let timer, x0, y0, lastX, lastY, track = false;
+  const enter = () => { track = true; kb.classList.add('trackpad'); field.classList.add('trackpad-on'); feedback(); };
+  el.addEventListener('pointerdown', (e) => {
+    e.preventDefault(); el.setPointerCapture(e.pointerId); el.classList.add('pressed'); feedback();
+    x0 = lastX = e.clientX; y0 = lastY = e.clientY; track = false;
+    timer = setTimeout(enter, 350);
+  });
+  el.addEventListener('pointermove', (e) => {
+    if (!track && Math.abs(e.clientX - x0) > 12) { clearTimeout(timer); enter(); }
+    if (!track) return;
+    let moved = false;
+    while (e.clientX - lastX >= 9) { st.caret = Math.min(st.text.length, st.caret + 1); lastX += 9; moved = true; }
+    while (lastX - e.clientX >= 9) { st.caret = Math.max(0, st.caret - 1); lastX -= 9; moved = true; }
+    while (e.clientY - lastY >= 28) { moveLine(1); lastY += 28; moved = true; }
+    while (lastY - e.clientY >= 28) { moveLine(-1); lastY -= 28; moved = true; }
+    if (moved) renderField();
+  });
+  const end = (e) => {
+    clearTimeout(timer); el.classList.remove('pressed');
+    if (track) { track = false; kb.classList.remove('trackpad'); field.classList.remove('trackpad-on'); autoCap(); render(); return; }
+    if (e.type === 'pointercancel') return;
+    const lr = el.querySelector('.lang')?.getBoundingClientRect();
+    if (lr && e.clientX >= lr.left - 6 && e.clientX <= lr.right + 6 && e.clientY >= lr.top - 6 && e.clientY <= lr.bottom + 6) { st.lang = st.lang === 'VI' ? 'EN' : 'VI'; render(); return; }
+    const t = st.text.slice(0, st.caret);
+    if (settings.doubleSpace && / $/.test(t) && /[\p{L}\p{N}]$/u.test(t.slice(0, -1))) { deleteBack(); insert('. '); }
+    else insert(' ');
+    autoCap(); render();
+  };
+  el.addEventListener('pointerup', end);
+  el.addEventListener('pointercancel', end);
+}
+
+function flash(msg) { statusEl.textContent = msg; setTimeout(renderField, 1300); }
+
+/* ---------- Cài đặt ---------- */
+const GROUPS = [
+  ['Phản hồi khi gõ', [
+    { k: 'click', t: 'Âm click', d: 'Trên máy dùng âm hệ thống; cần bật "Bàn phím bấm" trong Âm thanh' },
+    { k: 'haptic', t: 'Rung nhẹ', d: 'Cần Full Access. Bản web trên iPhone không rung được' },
+  ]],
+  ['Gõ chữ', [
+    { k: 'autocap', t: 'Tự viết hoa đầu câu' },
+    { k: 'doubleSpace', t: 'Chạm cách 2 lần ra dấu chấm' },
+    { k: 'tone', t: 'Kiểu bỏ dấu', d: 'Áp dụng khi có Telex (M2)', seg: [['new', 'hoà'], ['old', 'hòa']] },
+    { k: 'defaultLang', t: 'Ngôn ngữ mặc định', seg: [['VI', 'VI'], ['EN', 'EN']] },
+  ]],
+  ['Giao diện', [
+    { k: 'theme', t: 'Theme', seg: [['system', 'Hệ thống'], ['light', 'Sáng'], ['dark', 'Tối']] },
+    { k: 'height', t: 'Chiều cao phím', range: [0.85, 1.2, 0.05] },
+  ]],
+];
+function renderSettings() {
+  $('settings').innerHTML = GROUPS.map(([title, items]) => `
+    <div class="group-t">${title}</div>
+    <div class="group">${items.map(it => `
+      <div class="item"><div class="t">${it.t}${it.d ? `<small>${it.d}</small>` : ''}</div>
+      ${it.seg ? `<div class="seg">${it.seg.map(([v, l]) => `<button data-k="${it.k}" data-v="${v}" class="${settings[it.k] === v ? 'on' : ''}">${l}</button>`).join('')}</div>`
+        : it.range ? `<input type="range" data-k="${it.k}" min="${it.range[0]}" max="${it.range[1]}" step="${it.range[2]}" value="${settings[it.k]}" aria-label="${it.t}">`
+        : `<button class="sw ${settings[it.k] ? 'on' : ''}" data-k="${it.k}" role="switch" aria-checked="${settings[it.k]}" aria-label="${it.t}"></button>`}
+      </div>`).join('')}
+    </div>`).join('') + `
+    <p class="note">Trên app thật, các cài đặt này được ghi vào App Group và bàn phím đọc lại mỗi lần mở.</p>
+    <div class="group" style="margin-top:14px"><div class="item"><div class="t">Khôi phục mặc định</div><button class="seg" style="padding:7px 12px;color:#ff453a;border:0" id="reset">Đặt lại</button></div></div>`;
+}
+function save() { try { localStorage.setItem('kyx-settings', JSON.stringify(settings)); } catch (e) {} }
+$('settings').addEventListener('click', (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.id === 'reset') settings = { ...DEFAULTS };
+  else if (b.classList.contains('sw')) settings[b.dataset.k] = !settings[b.dataset.k];
+  else if (b.dataset.v) { settings[b.dataset.k] = b.dataset.v; if (b.dataset.k === 'defaultLang') st.lang = b.dataset.v; }
+  save(); renderSettings(); render();
+});
+$('settings').addEventListener('input', (e) => {
+  if (e.target.type === 'range') { settings[e.target.dataset.k] = +e.target.value; save(); render(); }
+});
+
+/* ---------- Tab ---------- */
+function showTab(type) {
+  $('tabType').classList.toggle('on', type); $('tabSettings').classList.toggle('on', !type);
+  $('viewType').classList.toggle('on', type); $('viewSettings').classList.toggle('on', !type);
+}
+$('tabType').addEventListener('click', () => showTab(true));
+$('tabSettings').addEventListener('click', () => showTab(false));
+matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', render);
+
+autoCap(); renderSettings(); render();
+}
+</script>
+</body>
+</html>

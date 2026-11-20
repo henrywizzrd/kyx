@@ -1,19 +1,20 @@
 # Trạng thái
 
-## Đang làm: M0 "hello keyboard"
-Mục tiêu: chứng minh cả chuỗi CI build IPA → ESign ký app + `.appex` → bàn phím hiện trong Cài đặt → App Group đọc/ghi được.
+## Roadmap
+- **M0** "hello keyboard": build xong, phát hành `v0.0.1`. Chưa test trên máy.
+- **M1** Layout giống bản mẫu + trang 123/#+= + Shift/Caps Lock + log (vì đã bật Full Access) ← **tiếp theo**
+- **M2** Engine Telex (TDD) + đổi VI/EN + kiểu bỏ dấu hoà/hòa
+- **M3** Cử chỉ: trackpad 4 hướng trên phím cách, vuốt ⌫ để xoá theo từ, giữ phím để hiện chữ có dấu
+- **M4** Trang Cài đặt trong app (âm, rung, tự viết hoa, cách đôi ra dấu chấm, kiểu bỏ dấu, ngôn ngữ mặc định, theme, chiều cao) + đồng bộ qua App Group
+- **M5** Hoàn thiện, đo bộ nhớ và độ trễ
 
-- [x] Khung project, keyboard target, engine package, docs
-- [x] CI: engine tests + typecheck + IPA (ký ad-hoc kèm entitlements)
-- [ ] CI xanh
-- [ ] Tyson ký bằng ESign, cài và bật bàn phím
-- [ ] Kết quả probe trên máy (container / host.ping / file write / defaults write)
+Spec hành vi: `docs/mockup/index.html` (ADR-010).
 
-## Tiếp theo
-M1: QWERTY tiếng Anh + log + màn hình Log (thiết kế log tuỳ kết quả ADR-006).
+## Đang chờ
+- Tyson xem bản mẫu v2 và duyệt. Sau đó Claude làm M1 trở đi, build `v0.1.0` để test chung với M0.
 
 ## Lần chạy CI gần nhất
-(chưa có)
+- e562d7c: success
 
 ## Bug đã biết
 (chưa có)
